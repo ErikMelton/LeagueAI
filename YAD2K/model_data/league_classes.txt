@@ -1,0 +1,6 @@
+Friendly_Melee_Minion
+Friendly_Caster_Minion
+Friendly_Cannon_Minion
+Enemy_Melee_Minion
+Enemy_Caster_Minion
+Enemy_Cannon_Minion
