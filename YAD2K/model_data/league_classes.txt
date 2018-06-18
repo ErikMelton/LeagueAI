@@ -1,6 +1,4 @@
-Friendly_Melee_Minion
-Friendly_Caster_Minion
-Friendly_Cannon_Minion
-Enemy_Melee_Minion
-Enemy_Caster_Minion
-Enemy_Cannon_Minion
+chaos_minion_melee_blue
+chaos_minion_melee_purple
+order_minion_melee_red
+order_minion_melee_blue
