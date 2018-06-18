@@ -12,6 +12,8 @@ trainDict = []
 
 count = 0
 
+label_dict = {'chaos_minion_melee_blue': 1,'chaos_minion_melee_purple': 2,'order_minion_melee_red': 3,'order_minion_melee_blue': 4}
+
 for screenshot in screenshotList:
     print('Generating training data for image: ' + str(count) + ' of ' + str(len(screenshotList)))
     numMinions = random.randint(4,18)
@@ -26,11 +28,11 @@ for screenshot in screenshotList:
         minionLocationX = randX + minion.center[0] 
         minionLocationY = randY + minion.center[1]
 
-        minionBBTL = ((minionLocationX - minion.bboxwidth/2), (minionLocationY + minion.bboxheight/2))
-        minionBBTR = ((minionLocationX + minion.bboxwidth/2), (minionLocationY + minion.bboxheight/2))
-        minionBBBL = ((minionLocationX - minion.bboxwidth/2), (minionLocationY - minion.bboxheight/2))
-        minionBBBR = ((minionLocationX + minion.bboxwidth/2), (minionLocationY - minion.bboxheight/2))
-        minionBoundingBox = np.array([minionBBTL,minionBBTR,minionBBBL,minionBBBR]).tolist()
+        xmin = (minionLocationX - minion.bboxwidth/2)
+        xmax = (minionLocationX + minion.bboxwidth/2)
+        ymin = (minionLocationY - minion.bboxheight/2)
+        ymax = (minionLocationY - minion.bboxheight/2)
+        minionBoundingBox = np.array([label_dict[minion.minionType],xmin,ymin,xmax,ymax]).tolist()
 
         minionData.append({'minionType': minion.minionType, 'minionLocation': (minionLocationX,minionLocationY), 'minionBB': minionBoundingBox})
         screenshot.paste(minion.image,(randX,randY),minion.image)
