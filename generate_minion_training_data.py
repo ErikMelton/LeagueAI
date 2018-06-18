@@ -18,25 +18,27 @@ for screenshot in screenshotList:
     print('Generating training data for image: ' + str(count) + ' of ' + str(len(screenshotList)))
     numMinions = random.randint(4,18)
     minionData = []
+    # draw = ImageDraw.Draw(screenshot)
 
     for miniCount in range(0, numMinions):
         toMergeCategory = random.choice(list(minionDict.items()))
         minion = toMergeCategory[1][random.randint(0,len(toMergeCategory[1])-1)]
 
-        randX = random.randint(0-minion.center[0],1920-minion.center[0])
-        randY = random.randint(0-minion.center[1],1080-minion.center[1])
+        randX = random.randint(0,1920)
+        randY = random.randint(0,1080)
         minionLocationX = randX + minion.center[0] 
         minionLocationY = randY + minion.center[1]
 
         xmin = (minionLocationX - minion.bboxwidth/2)
         xmax = (minionLocationX + minion.bboxwidth/2)
         ymin = (minionLocationY - minion.bboxheight/2)
-        ymax = (minionLocationY - minion.bboxheight/2)
+        ymax = (minionLocationY + minion.bboxheight/2)
+        # draw.rectangle(((xmin, ymin), (xmax, ymax)), outline="yellow")
         minionBoundingBox = np.array([label_dict[minion.minionType],xmin,ymin,xmax,ymax]).tolist()
 
         minionData.append({'minionType': minion.minionType, 'minionLocation': (minionLocationX,minionLocationY), 'minionBB': minionBoundingBox})
         screenshot.paste(minion.image,(randX,randY),minion.image)
-    
+
     trainDict.append({'imageNum': count, 'minionData': minionData})
     screenshot.save('./data/trainables/' + str(count) + '.png')
     count += 1
