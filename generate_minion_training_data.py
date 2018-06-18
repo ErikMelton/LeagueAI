@@ -1,4 +1,5 @@
 import json
+import numpy as np
 
 from format_minion_anim_files import generateMinionDict,generateScreenshotList
 from PIL import Image, ImageDraw
@@ -25,7 +26,13 @@ for screenshot in screenshotList:
         minionLocationX = randX + minion.center[0] 
         minionLocationY = randY + minion.center[1]
 
-        minionData.append({'minionType': minion.minionType, 'minionLocation': (minionLocationX,minionLocationY)})
+        minionBBTL = ((minionLocationX - minion.bboxwidth/2), (minionLocationY + minion.bboxheight/2))
+        minionBBTR = ((minionLocationX + minion.bboxwidth/2), (minionLocationY + minion.bboxheight/2))
+        minionBBBL = ((minionLocationX - minion.bboxwidth/2), (minionLocationY - minion.bboxheight/2))
+        minionBBBR = ((minionLocationX + minion.bboxwidth/2), (minionLocationY - minion.bboxheight/2))
+        minionBoundingBox = np.array([minionBBTL,minionBBTR,minionBBBL,minionBBBR]).tolist()
+
+        minionData.append({'minionType': minion.minionType, 'minionLocation': (minionLocationX,minionLocationY), 'minionBB': minionBoundingBox})
         screenshot.paste(minion.image,(randX,randY),minion.image)
     
     trainDict.append({'imageNum': count, 'minionData': minionData})
