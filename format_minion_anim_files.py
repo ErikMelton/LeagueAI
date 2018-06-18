@@ -18,7 +18,7 @@ def generateMinionDict():
 
     for subdir,dirs,files in os.walk(dataDir):
         for file in files:
-            if subdir != './data/screenshots' and subdir != './data/trainables' and subdir != './data/videos':
+            if 'minion' in subdir:
                 minionType = subdir[7:]
                 minionType = minionType.split('\\', 1)[0]
                 minionImage = Image.open(os.path.join(subdir,file))
