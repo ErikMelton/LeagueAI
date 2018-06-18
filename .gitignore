@@ -112,3 +112,4 @@ YAD2K/yolo.cfg
 YAD2K/yolo.weights
 YAD2K/model_data/yolo.h5
 YAD2K/model_data/yolo_topless.h5
+YAD2K/logs/*
