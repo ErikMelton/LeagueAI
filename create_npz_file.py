@@ -2,16 +2,18 @@ import numpy as np
 from PIL import Image
 import os
 import sys
-import json
+import json   
 
-def get_boundingboxes_and_images(jsonfile):
+def load_json_to_dict():
+    json_file = json.load(open('./data/trainables/data.json'))
+    return json_file
+
+
+def get_boundingboxes_and_images_for_chunk(chunk):
     image = []
     boxes = []
 
-    count = 0
-    for sample in jsonfile:
-        if count == 400:
-            return boxes,image
+    for sample in chunk:
 
         print("Getting sample: " + str(sample['imageNum']))
         boundingboxes = []
@@ -23,37 +25,40 @@ def get_boundingboxes_and_images(jsonfile):
             bounding_box = minion['minionBB']
             boundingboxes.append(np.array(bounding_box))
         boxes.append(np.array(boundingboxes))
-        count += 1
 
     return boxes,image
         
+if __name__ == '__main__':
+    data_segments = 400
+    data = load_json_to_dict()
+    data = [data[x:x+data_segments] for x in range(0, len(data), data_segments)]
 
-label_dict = {'chaos_minion_melee_blue': 1,'chaos_minion_melee_purple': 2,'order_minion_melee_red': 3,'order_minion_melee_blue': 4}
+    num_chunk = 0
 
-json_file = json.load(open('./data/trainables/data.json'))
+    for chunk in data:
+        bounds,images = get_boundingboxes_and_images_for_chunk(chunk)
+        
+        test_set_cut = int(0.025 * len(images))
+        val_set_cut = int(0.175 * len(images))
+        train_set_cut = int(0.80 * len(images))
 
-dict_to_npz = {}
+        all_images = np.array(images)
+        all_boxes = np.array(bounds)
 
-bounds,images = get_boundingboxes_and_images(json_file)
+        train_images,val_images,test_images = np.split(all_images,[train_set_cut,train_set_cut+val_set_cut])
+        train_boxes,val_boxes,test_boxes = np.split(all_boxes,[train_set_cut,train_set_cut+val_set_cut])
 
-test_set_cut = int(0.025 * len(images))
-val_set_cut = int(0.175 * len(images))
-train_set_cut = int(0.80 * len(images))
+        print("Shape of training images... ", train_images.shape)
+        print("Shape of val images... ", val_images.shape)
+        print("Shape of test images... ", test_images.shape)
 
-all_images = np.array(images)
-all_boxes = np.array(bounds)
+        print("Shape of training boxes... ", train_boxes.shape)
+        print("Shape of val boxes... ", val_boxes.shape)
+        print("Shape of test boxes... ", test_boxes.shape)
 
-train_images,val_images,test_images = np.split(all_images,[train_set_cut,train_set_cut+val_set_cut])
-train_boxes,val_boxes,test_boxes = np.split(all_boxes,[train_set_cut,train_set_cut+val_set_cut])
+        np.savez('./data/train/data_training_set_cluster_' + str(num_chunk),force_zip64=True,images=train_images,boxes=train_boxes)
+        np.savez('./data/test/data_test_set_cluster_' + str(num_chunk),images=test_images,boxes=test_boxes)
+        np.savez('./data/val/data_val_set_cluster_' + str(num_chunk),images=val_images,boxes=val_boxes)
 
-print("Shape of training images... ", train_images.shape)
-print("Shape of val images... ", val_images.shape)
-print("Shape of test images... ", test_images.shape)
-
-print("Shape of training boxes... ", train_boxes.shape)
-print("Shape of val boxes... ", val_boxes.shape)
-print("Shape of test boxes... ", test_boxes.shape)
-
-np.savez('./data/data_training_set_cluster',force_zip64=True,images=train_images,boxes=train_boxes)
-np.savez('./data/data_test_set_cluster',images=test_images,boxes=test_boxes)
-np.savez('./data/data_val_set_cluster',images=val_images,boxes=val_boxes)
+        print("Saved @ # " + str(num_chunk))
+        num_chunk += 1
