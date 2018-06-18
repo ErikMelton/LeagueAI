@@ -8,6 +8,8 @@ class Minion():
         self.image = image
         width,height = image.size
         self.center = ((width/2),(height/2))
+        self.bboxwidth = 330
+        self.bboxheight = 330
 
 def generateMinionDict():
     minionDict = {'chaos_minion_melee_blue': [],'chaos_minion_melee_purple': [],'order_minion_melee_red': [],'order_minion_melee_blue': []}
