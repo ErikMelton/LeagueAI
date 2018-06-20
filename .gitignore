@@ -119,3 +119,5 @@ YAD2K/trained_stage_3.h5
 YAD2K/trained_stage_1.h5
 YAD2K/trained_stage_2.h5
 YAD2K/trained_stage_3_best.h5
+.vscode/*
+logs/*
