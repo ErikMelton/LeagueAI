@@ -8,7 +8,7 @@ success,image = vidcap.read()
 count=0
 
 while success:
-    vidcap.set(cv2.CAP_PROP_POS_MSEC,count*1000)
+    vidcap.set(cv2.CAP_PROP_POS_MSEC,count*500)
     success,image = vidcap.read()
     cv2.imwrite('./data/screenshots/%d.png' % count, image)
     count += 1

@@ -24,15 +24,15 @@ for screenshot in screenshotList:
         toMergeCategory = random.choice(list(minionDict.items()))
         minion = toMergeCategory[1][random.randint(0,len(toMergeCategory[1])-1)]
 
-        randX = random.randint(0,1920)
-        randY = random.randint(0,1080)
-        minionLocationX = randX + minion.center[0] 
-        minionLocationY = randY + minion.center[1]
+        randX = random.randint(0,1920-minion.center[0])
+        randY = random.randint(0,1080-minion.center[1])
+        minionLocationX = int(randX + minion.center[0]) 
+        minionLocationY = int(randY + minion.center[1])
 
-        xmin = (minionLocationX - minion.bboxwidth/2)
-        xmax = (minionLocationX + minion.bboxwidth/2)
-        ymin = (minionLocationY - minion.bboxheight/2)
-        ymax = (minionLocationY + minion.bboxheight/2)
+        xmin = int(minionLocationX - minion.center[0])
+        xmax = int(minionLocationX + minion.center[0])
+        ymin = int(minionLocationY - minion.center[1])
+        ymax = int(minionLocationY + minion.center[1])
         # draw.rectangle(((xmin, ymin), (xmax, ymax)), outline="yellow")
         minionBoundingBox = np.array([label_dict[minion.minionType],xmin,ymin,xmax,ymax]).tolist()
 

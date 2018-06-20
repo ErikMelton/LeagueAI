@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     for chunk in data:
         bounds,images = get_boundingboxes_and_images_for_chunk(chunk)
-        
+
         test_set_cut = int(0.025 * len(images))
         val_set_cut = int(0.175 * len(images))
         train_set_cut = int(0.80 * len(images))
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
         train_images,val_images,test_images = np.split(all_images,[train_set_cut,train_set_cut+val_set_cut])
         train_boxes,val_boxes,test_boxes = np.split(all_boxes,[train_set_cut,train_set_cut+val_set_cut])
-
+        
         print("Shape of training images... ", train_images.shape)
         print("Shape of val images... ", val_images.shape)
         print("Shape of test images... ", test_images.shape)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
         print("Shape of val boxes... ", val_boxes.shape)
         print("Shape of test boxes... ", test_boxes.shape)
 
-        np.savez('./data/train/data_training_set_cluster_' + str(num_chunk),force_zip64=True,images=train_images,boxes=train_boxes)
+        np.savez('./data/train/data_training_set_cluster_' + str(num_chunk),images=train_images,boxes=train_boxes)
         np.savez('./data/test/data_test_set_cluster_' + str(num_chunk),images=test_images,boxes=test_boxes)
         np.savez('./data/val/data_val_set_cluster_' + str(num_chunk),images=val_images,boxes=val_boxes)
 

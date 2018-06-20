@@ -8,7 +8,7 @@ class Minion():
         self.minionType = minionType
         self.image = image
         width,height = image.size
-        self.center = ((width/2),(height/2))
+        self.center = (int((width/2)),int((height/2)))
         self.bboxwidth = width
         self.bboxheight = height
 
@@ -55,6 +55,19 @@ def preprocess_minion_files():
                 image_data_new = image_data[cropBox[0]:cropBox[1] + 1, cropBox[2]:cropBox[3] + 1, :]
                 reduced_minion_image = Image.fromarray(image_data_new)
                 reduced_minion_image.save(os.path.join(subdir,file))
+
+def preprocess_minion_files1():
+    for subdir,dirs,files in os.walk('./data/'):
+        for file in files:
+            if 'minion' in subdir:
+                minionImage = Image.open(os.path.join(subdir,file))
+                
+                image = minionImage.convert('RGBA')
+                new_image = Image.new('RGBA', (330, 330), (0, 0, 0, 0))
+                upper = (330 - image.size[1]) / 2
+                mid = (330 - image.size[0]) / 2
+                new_image.paste(image, (int(mid), int(upper)))
+                new_image.save(os.path.join(subdir,file))
 
 if __name__ == '__main__':
     preprocess_minion_files()
