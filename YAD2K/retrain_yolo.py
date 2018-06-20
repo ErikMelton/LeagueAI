@@ -23,22 +23,16 @@ argparser = argparse.ArgumentParser(
     description="Retrain or 'fine-tune' a pretrained YOLOv2 model for your own data.")
 
 argparser.add_argument(
-    '-d',
-    '--data_path',
-    help="path to numpy data file (.npz) containing np.object array 'boxes' and np.uint8 array 'images'",
-    default=os.path.join('./data', 'data_training_set.npz'))
-
-argparser.add_argument(
     '-a',
     '--anchors_path',
     help='path to anchors file, defaults to yolo_anchors.txt',
-    default=os.path.join('./model_data', 'yolo_anchors.txt'))
+    default=os.path.join('YAD2K/model_data', 'yolo_anchors.txt'))
 
 argparser.add_argument(
     '-c',
     '--classes_path',
     help='path to classes file, defaults to pascal_classes.txt',
-    default=os.path.join('./model_data', 'league_classes.txt'))
+    default=os.path.join('YAD2K/model_data', 'league_classes.txt'))
 
 YOLO_ANCHORS = np.array(
     ((0.57273, 0.677385), (1.87446, 2.06253), (3.33843, 5.47434),
@@ -86,7 +80,7 @@ class TrainingData:
         # images and boxes will simply point to the images of the cluster we are currently on
         self.train_images = self.curr_train_npz_cluster['images']
         self.train_boxes = self.curr_train_npz_cluster['boxes']
-
+        
         # set up validationas images/boxes well.
         self.val_images = self.curr_val_npz_cluster['images']
         self.val_boxes = self.curr_val_npz_cluster['boxes']
@@ -187,25 +181,22 @@ class TrainingData:
         return int(steps / batch_size)
 
 def _main(args):
-    data_path = os.path.expanduser(args.data_path)
     classes_path = os.path.expanduser(args.classes_path)
     anchors_path = os.path.expanduser(args.anchors_path)
 
     class_names = get_classes(classes_path)
     anchors = get_anchors(anchors_path)
 
-    # custom data saved as a numpy file.
-    # data = (np.load(data_path))
     # easy class to handle all the data
-    train_clusts = os.listdir('../data/train/')
-    val_clusts = os.listdir('../data/val/')
+    train_clusts = os.listdir('data/train/')
+    val_clusts = os.listdir('data/val/')
 
     train_clus_clean  = []
     val_clus_clean = []
     for folder_name in train_clusts:
-        train_clus_clean.append('../data/train/' + folder_name)
+        train_clus_clean.append('data/train/' + folder_name)
     for folder_name in val_clusts:
-        val_clus_clean.append('../data/val/' + folder_name)
+        val_clus_clean.append('data/val/' + folder_name)
 
     data = TrainingData(train_clus_clean, val_clus_clean)
 
@@ -342,7 +333,7 @@ def create_model(anchors, class_names, load_pretrained=True, freeze_body=True):
 
     if load_pretrained:
         # Save topless yolo:
-        topless_yolo_path = os.path.join('model_data', 'yolo_topless.h5')
+        topless_yolo_path = os.path.join('YAD2K/model_data', 'yolo_topless.h5')
         if not os.path.exists(topless_yolo_path):
             print("CREATING TOPLESS WEIGHTS FILE")
             yolo_path = os.path.join('model_data', 'yolo.h5')
