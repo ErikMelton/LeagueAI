@@ -452,8 +452,7 @@ def draw(model_body, class_names, anchors, image_data, image_set='val',
     # Create output variables for prediction.
     yolo_outputs = yolo_head(model_body.output, anchors, len(class_names))
     input_image_shape = K.placeholder(shape=(2, ))
-    boxes, scores, classes = yolo_eval(
-        yolo_outputs, input_image_shape, score_threshold=0.07, iou_threshold=0)
+    boxes, scores, classes = yolo_eval(yolo_outputs, input_image_shape, score_threshold=0.07, iou_threshold=0.0)
 
     # Run prediction on overfit image.
     sess = K.get_session()  # TODO: Remove dependence on Tensorflow session.
