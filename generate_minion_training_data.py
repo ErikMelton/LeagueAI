@@ -12,7 +12,7 @@ trainDict = []
 
 count = 0
 
-label_dict = {'chaos_minion_melee_blue': 1,'chaos_minion_melee_purple': 2,'order_minion_melee_red': 3,'order_minion_melee_blue': 4}
+label_dict = {'chaos_minion_melee_blue': 0,'chaos_minion_melee_purple': 1,'order_minion_melee_red': 2,'order_minion_melee_blue': 3}
 
 for screenshot in screenshotList:
     print('Generating training data for image: ' + str(count) + ' of ' + str(len(screenshotList)))

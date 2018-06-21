@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Run a YOLO_v2 style detection model on test images."""
 import argparse
 import colorsys
@@ -14,11 +13,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 import cv2
 
-from yad2k.models.keras_yolo import yolo_eval, yolo_head
+from YAD2K.yad2k.models.keras_yolo import yolo_eval, yolo_head
 
 from retrain_yolo import create_model
-
-import youtube_dl
 
 parser = argparse.ArgumentParser(
     description='Run a YOLO_v2 style detection model on the LoL minimap. Choose')
@@ -27,17 +24,17 @@ parser.add_argument(
     '--model_path',
     help='path to h5 model file containing body'
     'of a YOLO_v2 model',
-    default='model_data/yolo.h5')
+    default='YAD2K/model_data/yolo.h5')
 parser.add_argument(
     '-a',
     '--anchors_path',
     help='path to anchors file, defaults to yolo_anchors.txt',
-    default='model_data/yolo_anchors.txt')
+    default='YAD2K/model_data/yolo_anchors.txt')
 parser.add_argument(
     '-c',
     '--classes_path',
     help='path to classes file, defaults to coco_classes.txt',
-    default='model_data/league_classes.txt')
+    default='YAD2K/model_data/league_classes.txt')
 parser.add_argument(
     '-s',
     '--score_threshold',
@@ -57,39 +54,7 @@ parser.add_argument(
     type=str,
     help='path to output test images')
 
-parser.add_argument(
-    '-champs',
-    '--champs_in_game',
-    type=str,
-    help='to help avoid bad predictions, tell DeepLeague the 10 champions in the game of the VOD you are passing',
-    default= "")
-
 subparsers = parser.add_subparsers(dest='subcommand')
-
-youtube_option = subparsers.add_parser('youtube')
-youtube_option.add_argument(
-    '-yt',
-    '--test_youtube_link',
-    type=str,
-    help='a YouTube link to the VOD you want to analyze. Note - only 1080p videos are allowed!')
-youtube_option.add_argument(
-    '-yt_path',
-    '--youtube_download_path',
-    type=str,
-    help='path to download YouTube video to')
-
-youtube_option.add_argument(
-    '-start',
-    '--start_time',
-    type=str,
-    help='time when the game starts in the actual VOD. input in the format HH:MM:SS. ex. for 1:30 type 00:01:30'
-)
-youtube_option.add_argument(
-    '-end',
-    '--end_time',
-    type=str,
-    help='time when the game starts in the actual VOD. input in the format HH:MM:SS. ex. for 1:30 type 00:01:30'
-)
 
 vod_option = subparsers.add_parser('mp4')
 vod_option.add_argument(
@@ -106,12 +71,6 @@ image_option.add_argument(
     type=str,
     help='path to images to test. These images MUST be size 1920x1080')
 
-npz_option = subparsers.add_parser('npz')
-npz_option.add_argument(
-    '-npz',
-    '--test_npz_path',
-    help='path to npz file to test with image/bounding box objects. see GitHub for a download link.')
-
 args = parser.parse_args()
 
 model_path = os.path.expanduser(args.model_path)
@@ -120,30 +79,11 @@ anchors_path = os.path.expanduser(args.anchors_path)
 classes_path = os.path.expanduser(args.classes_path)
 output_path = os.path.expanduser(args.output_path)
 
-champs_in_game = os.path.expanduser(args.champs_in_game)
-
-user_did_specify_champs = False
-
-if champs_in_game != "":
-    user_did_specify_champs = True
-    champs_in_game = champs_in_game.split(" ")
-
 if args.subcommand == 'images':
     test_images_path = os.path.expanduser(args.test_images_path)
 
-if args.subcommand == 'npz':
-    test_npz_path = os.path.expanduser(args.test_npz_path)
-
 if args.subcommand == 'mp4':
     test_mp4_vod_path = os.path.expanduser(args.test_mp4_vod_path)
-
-
-if args.subcommand == 'youtube':
-    test_youtube_link = os.path.expanduser(args.test_youtube_link)
-    youtube_download_path = os.path.expanduser(args.youtube_download_path)
-    start_time = os.path.expanduser(args.start_time)
-    end_time = os.path.expanduser(args.end_time)
-
 
 if not os.path.exists(output_path):
     print('Creating output path {}'.format(output_path))
@@ -208,14 +148,12 @@ data_to_write = []
 
 def test_yolo(image, image_file_name):
     if is_fixed_size:  # TODO: When resizing we can use minibatch input.
-        resized_image = image.resize(
-            tuple(reversed(model_image_size)), Image.BICUBIC)
+        resized_image = image.resize(tuple(reversed(model_image_size)), Image.BICUBIC)
         image_data = np.array(resized_image, dtype='float32')
     else:
         # Due to skip connection + max pooling in YOLO_v2, inputs must have
         # width and height as multiples of 32.
-        new_image_size = (image.width - (image.width % 32),
-                          image.height - (image.height % 32))
+        new_image_size = (image.width - (image.width % 32),image.height - (image.height % 32))
         resized_image = image.resize(new_image_size, Image.BICUBIC)
         image_data = np.array(resized_image, dtype='float32')
         print(image_data.shape)
@@ -236,7 +174,6 @@ def test_yolo(image, image_file_name):
     # Write data to a JSON file located within the 'output/' directory.
     # This ASSUMES that the game comes from a spectated video starting at 0:00
     # Else, data will not be alligned!
-
     font = ImageFont.truetype(
         font='font/FiraMono-Medium.otf',
         size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
@@ -250,9 +187,6 @@ def test_yolo(image, image_file_name):
         predicted_class = class_names[c]
         box = out_boxes[i]
         score = out_scores[i]
-
-        if user_did_specify_champs and predicted_class not in champs_in_game:
-            continue
 
         label = '{} {:.2f}'.format(predicted_class, score)
 
@@ -268,7 +202,6 @@ def test_yolo(image, image_file_name):
 
         # Save important data to JSON.
         data['champs'][predicted_class] = score
-
 
         if top - label_size[1] >= 0:
             text_origin = np.array([left, top - label_size[1]])
@@ -316,7 +249,7 @@ def process_mp4(test_mp4_vod_path):
         # i think anymore than 2 FPS leads to to much repeat data.
         if count %  fps == 0:
             im = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            im = Image.fromarray(im).crop((1625, 785, 1920, 1080))
+            im = Image.fromarray(im)
             test_yolo(im, str(file_count) + '.jpg')
             file_count += 1
         count += 1
@@ -331,35 +264,11 @@ def _main():
             except IsADirectoryError:
                 continue
 
-            image = Image.open(os.path.join(test_images_path, image_file_name)).crop((1645, 805, 1920, 1080))
+            image = Image.open(os.path.join(test_images_path, image_file_name))
             test_yolo(image, image_file_name)
-
-
-    if args.subcommand == 'npz':
-        npz_obj = np.load(test_npz_path)
-        images = npz_obj['images']
-
-        for image_index, image_arr in enumerate(images):
-            image = Image.fromarray(image_arr)
-            test_yolo(image, str(image_index) + '.jpg')
 
     if args.subcommand == 'mp4':
         process_mp4(test_mp4_vod_path)
-
-    if args.subcommand == 'youtube':
-        youtube_download_path = os.path.dirname(os.path.abspath(__file__))
-        youtube_download_path = os.path.join(youtube_download_path, "output")
-        if os.path.exists(youtube_download_path + '/vod.mp4'):
-            os.remove(youtube_download_path + '/vod.mp4')
-        ydl_opts = {'outtmpl': youtube_download_path + '/' + 'vod_full.%(ext)s', 'format': '137'}
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([test_youtube_link])
-        # TODO test this on other systems.
-        print("Calling ffmpeg to cut up video")
-        call(['ffmpeg', '-i', youtube_download_path + '/vod_full.mp4', '-ss', start_time, '-to', end_time, '-c', 'copy', youtube_download_path + '/vod.mp4'])
-        os.remove(youtube_download_path + '/vod_full.mp4')
-        print("Done with ffmpeg")
-        process_mp4(youtube_download_path + '/vod.mp4')
 
     sess.close()
 
