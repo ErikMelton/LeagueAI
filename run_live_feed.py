@@ -1,46 +1,30 @@
-"""Run a YOLO_v2 style detection model on test images."""
+import time
+import cv2
+import mss
+import numpy as np
 import argparse
 import colorsys
 import imghdr
 import os
-from subprocess import call
 import random
 
-import numpy as np
 from keras import backend as K
 from keras.models import load_model
 from PIL import Image, ImageDraw, ImageFont
-
-import cv2
-
+from subprocess import call
 from YAD2K.yad2k.models.keras_yolo import yolo_eval, yolo_head
-
 from retrain_yolo import create_model
 
 parser = argparse.ArgumentParser(
     description='Run a YOLO_v2 style detection model. Choose')
 
 parser.add_argument(
-    '--model_path',
-    help='path to h5 model file containing body'
-    'of a YOLO_v2 model',
-    default='YAD2K/model_data/yolo.h5')
-parser.add_argument(
-    '-a',
-    '--anchors_path',
-    help='path to anchors file, defaults to yolo_anchors.txt',
-    default='YAD2K/model_data/yolo_anchors.txt')
-parser.add_argument(
-    '-c',
-    '--classes_path',
-    help='path to classes file, defaults to coco_classes.txt',
-    default='YAD2K/model_data/league_classes.txt')
-parser.add_argument(
     '-s',
     '--score_threshold',
     type=float,
     help='threshold for bounding box scores, default .3',
     default=.3)
+
 parser.add_argument(
     '-iou',
     '--iou_threshold',
@@ -48,46 +32,11 @@ parser.add_argument(
     help='threshold for non max suppression IOU, default .5',
     default=.5)
 
-parser.add_argument(
-    '-out',
-    '--output_path',
-    type=str,
-    help='path to output test images')
-
-subparsers = parser.add_subparsers(dest='subcommand')
-
-vod_option = subparsers.add_parser('mp4')
-vod_option.add_argument(
-    '-mp4',
-    '--test_mp4_vod_path',
-    type=str,
-    help='path to VOD to analyze. Note - only 1080p videos are allowed!'
-)
-
-image_option = subparsers.add_parser('images')
-image_option.add_argument(
-    '-images',
-    '--test_images_path',
-    type=str,
-    help='path to images to test. These images MUST be size 1920x1080')
-
 args = parser.parse_args()
 
-model_path = os.path.expanduser(args.model_path)
-assert model_path.endswith('.h5'), 'Keras model must be a .h5 file.'
-anchors_path = os.path.expanduser(args.anchors_path)
-classes_path = os.path.expanduser(args.classes_path)
-output_path = os.path.expanduser(args.output_path)
-
-if args.subcommand == 'images':
-    test_images_path = os.path.expanduser(args.test_images_path)
-
-if args.subcommand == 'mp4':
-    test_mp4_vod_path = os.path.expanduser(args.test_mp4_vod_path)
-
-if not os.path.exists(output_path):
-    print('Creating output path {}'.format(output_path))
-    os.mkdir(output_path)
+model_path = os.path.expanduser('YAD2K/model_data/yolo.h5')
+anchors_path = os.path.expanduser('YAD2K/model_data/yolo_anchors.txt')
+classes_path = os.path.expanduser('YAD2K/model_data/league_classes.txt')
 
 sess = K.get_session()  # TODO: Remove dependence on Tensorflow session.
 
@@ -100,7 +49,6 @@ with open(anchors_path) as f:
     anchors = [float(x) for x in anchors.split(',')]
     anchors = np.array(anchors).reshape(-1, 2)
 
-# yolo_model = load_model(model_path)
 yolo_model, _ = create_model(anchors, class_names)
 yolo_model.load_weights('trained_stage_3_best.h5')
 
@@ -109,10 +57,7 @@ num_classes = len(class_names)
 num_anchors = len(anchors)
 # TODO: Assumes dim ordering is channel last
 model_output_channels = yolo_model.layers[-1].output_shape[-1]
-assert model_output_channels == num_anchors * (num_classes + 5), \
-    'Mismatch between model and given anchor and class sizes. ' \
-    'Specify matching anchors and classes with --anchors_path and ' \
-    '--classes_path flags.'
+assert model_output_channels == num_anchors * (num_classes + 5), 'Mismatch between model and given anchor and class sizes. ' 
 print('{} model, anchors, and classes loaded.'.format(model_path))
 
 # Check if model is fully convolutional, assuming channel last order.
@@ -120,12 +65,9 @@ model_image_size = yolo_model.layers[0].input_shape[1:3]
 is_fixed_size = model_image_size != (None, None)
 
 # Generate colors for drawing bounding boxes.
-hsv_tuples = [(x / len(class_names), 1., 1.)
-              for x in range(len(class_names))]
+hsv_tuples = [(x / len(class_names), 1., 1.) for x in range(len(class_names))]
 colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
-colors = list(
-    map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)),
-        colors))
+colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
 random.seed(10101)  # Fixed seed for consistent colors across runs.
 random.shuffle(colors)  # Shuffle colors to decorrelate adjacent classes.
 random.seed(None)  # Reset seed to default.
@@ -134,11 +76,7 @@ random.seed(None)  # Reset seed to default.
 # TODO: Wrap these backend operations with Keras layers.
 yolo_outputs = yolo_head(yolo_model.output, anchors, len(class_names))
 input_image_shape = K.placeholder(shape=(2, ))
-boxes, scores, classes = yolo_eval(
-    yolo_outputs,
-    input_image_shape,
-    score_threshold=args.score_threshold,
-    iou_threshold=args.iou_threshold)
+boxes, scores, classes = yolo_eval(yolo_outputs,input_image_shape,score_threshold=args.score_threshold,iou_threshold=args.iou_threshold)
 
 # Save the output into a compact JSON file.
 outfile = open('output/game_data.json', 'w')
@@ -146,7 +84,7 @@ outfile = open('output/game_data.json', 'w')
 data_to_write = []
 
 
-def test_yolo(image, image_file_name):
+def test_yolo(image):
     if is_fixed_size:  # TODO: When resizing we can use minibatch input.
         resized_image = image.resize(tuple(reversed(model_image_size)), Image.BICUBIC)
         image_data = np.array(resized_image, dtype='float32')
@@ -169,19 +107,16 @@ def test_yolo(image, image_file_name):
             K.learning_phase(): 0
         })
 
-    print('Found {} boxes for {}'.format(len(out_boxes), image_file_name))
+    print('Found {} boxes'.format(len(out_boxes)))
 
     # Write data to a JSON file located within the 'output/' directory.
-    # This ASSUMES that the game comes from a spectated video starting at 0:00
-    # Else, data will not be alligned!
     font = ImageFont.truetype(
         font='font/FiraMono-Medium.otf',
         size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
     thickness = (image.size[0] + image.size[1]) // 300
 
     data = {}
-    data['timestamp'] = '0:00'
-    data['champs'] = {}
+    data['minions'] = {}
 
     for i, c in reversed(list(enumerate(out_classes))):
         predicted_class = class_names[c]
@@ -201,7 +136,7 @@ def test_yolo(image, image_file_name):
         print(label, (left, top), (right, bottom))
 
         # Save important data to JSON.
-        data['champs'][predicted_class] = score
+        data['minions'][predicted_class] = score
 
         if top - label_size[1] >= 0:
             text_origin = np.array([left, top - label_size[1]])
@@ -216,61 +151,36 @@ def test_yolo(image, image_file_name):
             [tuple(text_origin), tuple(text_origin + label_size)],
             fill=colors[c])
         draw.text(text_origin, label, fill=(0, 0, 0), font=font)
-
-
         del draw
 
-    image.save(os.path.join(output_path, image_file_name), quality=90)
-
-def process_mp4(test_mp4_vod_path):
-    video = cv2.VideoCapture(test_mp4_vod_path)
-    print("Opened ", test_mp4_vod_path)
-    print("Processing MP4 frame by frame")
-
-    # forward over to the frames you want to start reading from.
-    # manually set this, fps * time in seconds you wanna start from
-    video.set(1, 0);
-    success, frame = video.read()
-    count = 0
-    file_count = 0
-    success = True
-    fps = int(video.get(cv2.CAP_PROP_FPS))
-    total_frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-    print("Loading video %d seconds long with FPS %d and total frame count %d " % (total_frame_count/fps, fps, total_frame_count))
-
-    while success:
-        success, frame = video.read()
-        if not success:
-            break
-        if count % 1000 == 0:
-            print("Currently at frame ", count)
-
-        # i save once every fps, which comes out to 1 frames per second.
-        # i think anymore than 2 FPS leads to to much repeat data.
-        if count %  fps == 0:
-            im = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            im = Image.fromarray(im)
-            test_yolo(im, str(file_count) + '.jpg')
-            file_count += 1
-        count += 1
+    return image
 
 def _main():
-    if args.subcommand == 'images':
-        for image_file_name in os.listdir(test_images_path):
-            try:
-                image_type = imghdr.what(os.path.join(test_images_path, image_file_name))
-                if not image_type:
-                    continue
-            except IsADirectoryError:
-                continue
+  with mss.mss() as sct:
+    # Part of the screen to capture
+    monitor = {'top': 40, 'left': 40, 'width': 1280, 'height': 720}
 
-            image = Image.open(os.path.join(test_images_path, image_file_name))
-            test_yolo(image, image_file_name)
+    while 'Screen capturing':
+        last_time = time.time()
 
-    if args.subcommand == 'mp4':
-        process_mp4(test_mp4_vod_path)
+        # Get raw pixels from the screen, save it to a Numpy array
+        img = np.array(sct.grab(monitor))
+        img = Image.fromarray(img)
 
-    sess.close()
+        img = test_yolo(img)
+        img = np.array(img)
+        # Display the picture
+        cv2.imshow('OpenCV/Numpy normal', img)
+        print('fps: {0}'.format(1 / (time.time()-last_time)))
+        # Press "q" to quit
+        if cv2.waitKey(25) & 0xFF == ord(';'):
+            cv2.destroyAllWindows()
+            break
+
+    #         image = Image.open(os.path.join(test_images_path, image_file_name))
+    #         test_yolo(image, image_file_name)
+
+  sess.close()
 
 if __name__ == '__main__':
     _main()
