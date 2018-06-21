@@ -16,7 +16,7 @@ label_dict = {'chaos_minion_melee_blue': 0,'chaos_minion_melee_purple': 1,'order
 
 for screenshot in screenshotList:
     print('Generating training data for image: ' + str(count) + ' of ' + str(len(screenshotList)))
-    numMinions = random.randint(4,18)
+    numMinions = random.randint(4,16)
     minionData = []
     # draw = ImageDraw.Draw(screenshot)
 
@@ -24,8 +24,8 @@ for screenshot in screenshotList:
         toMergeCategory = random.choice(list(minionDict.items()))
         minion = toMergeCategory[1][random.randint(0,len(toMergeCategory[1])-1)]
 
-        randX = random.randint(0,1920-minion.center[0])
-        randY = random.randint(0,1080-minion.center[1])
+        randX = random.randint(0,1280-minion.center[0])
+        randY = random.randint(0,720-minion.center[1])
         minionLocationX = int(randX + minion.center[0]) 
         minionLocationY = int(randY + minion.center[1])
 

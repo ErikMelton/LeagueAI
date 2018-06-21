@@ -393,12 +393,12 @@ def preprocess_true_boxes(true_boxes, anchors, image_size):
         # scale box to convolutional feature spatial dimensions
         box_class = box[4:5]
         box = box[0:4] * np.array([conv_width, conv_height, conv_width, conv_height])
-        i = np.float(box[1]).astype('int')
-        j = np.float(box[0]).astype('int')
-        # ifree = np.floor(box[1]).astype('int') - 1
-        # jfree = np.floor(box[0]).astype('int') - 1
-        # i = max(0, min(ifree, conv_width-1))
-        # j = max(0, min(jfree, conv_height-1))
+        # i = np.floor(box[1]).astype('int')
+        # j = np.floor(box[0]).astype('int')
+        ifree = np.floor(box[1]).astype('int')
+        jfree = np.floor(box[0]).astype('int')
+        i = max(0, min(ifree, conv_width-1))
+        j = max(0, min(jfree, conv_height-1))
         best_iou = 0
         best_anchor = 0
         for k, anchor in enumerate(anchors):
