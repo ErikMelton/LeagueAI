@@ -20,6 +20,25 @@ from retrain_yolo import create_model
 
 loaded = False
 
+parser = argparse.ArgumentParser(
+    description='Run a YOLO_v2 style detection model. Choose')
+
+parser.add_argument(
+    '-s',
+    '--score_threshold',
+    type=float,
+    help='threshold for bounding box scores, default .3',
+    default=.3)
+
+parser.add_argument(
+    '-iou',
+    '--iou_threshold',
+    type=float,
+    help='threshold for non max suppression IOU, default .5',
+    default=.5)
+
+args = parser.parse_args()
+
 def test_yolo(image,is_fixed_size,model_image_size,sess,boxes,scores,classes,yolo_model,input_image_shape,class_names,colors):
     if is_fixed_size:  # TODO: When resizing we can use minibatch input.
         resized_image = image.resize(tuple(reversed(model_image_size)), Image.BICUBIC)
@@ -63,7 +82,9 @@ def test_yolo(image,is_fixed_size,model_image_size,sess,boxes,scores,classes,yol
         coords = (left,top,right,bottom)
         data.append(coords)
     
-def run_nn(score_thresh,iou_thresh,hWnd,data,loaded):
+def run_nn(hWnd):
+    global loaded
+
     model_path = os.path.expanduser('YAD2K/model_data/yolo.h5')
     anchors_path = os.path.expanduser('YAD2K/model_data/yolo_anchors.txt')
     classes_path = os.path.expanduser('YAD2K/model_data/league_classes.txt')
@@ -106,7 +127,7 @@ def run_nn(score_thresh,iou_thresh,hWnd,data,loaded):
     # TODO: Wrap these backend operations with Keras layers.
     yolo_outputs = yolo_head(yolo_model.output, anchors, len(class_names))
     input_image_shape = K.placeholder(shape=(2, ))
-    boxes, scores, classes = yolo_eval(yolo_outputs,input_image_shape,score_threshold=score_thresh,iou_threshold=iou_thresh)
+    boxes, scores, classes = yolo_eval(yolo_outputs,input_image_shape,score_threshold=args.score_threshold,iou_threshold=args.iou_threshold)
 
     # Save the output into a compact JSON file.
     outfile = open('output/game_data.json', 'w')
@@ -114,7 +135,7 @@ def run_nn(score_thresh,iou_thresh,hWnd,data,loaded):
     data_to_write = []
 
     loaded = True
-    win32gui.UpdateWindow(hWnd)
+    win32gui.RedrawWindow(hWnd, None, None, win32con.RDW_INVALIDATE | win32con.RDW_ERASE)
 
     with mss.mss() as sct:
         monitor = {'top': 0, 'left': 0, 'width': 1920, 'height': 1080}
@@ -139,7 +160,6 @@ def run_nn(score_thresh,iou_thresh,hWnd,data,loaded):
             # # Display the picture
             # cv2.imshow('OpenCV/Numpy normal', img)
             print('fps: {0}'.format(1 / (time.time()-last_time)))
-            win32gui.UpdateWindow(hWnd)
             # Press "q" to quit
             if cv2.waitKey(25) & 0xFF == ord(';'):
                 cv2.destroyAllWindows()
@@ -173,8 +193,8 @@ def wndProc(hWnd, message, wParam, lParam):
         
         color = win32api.RGB(0,0,255)
         brush = win32gui.CreateSolidBrush(color)
-        for rect in data:
-            win32gui.FrameRect(hdc,rect,brush)
+        # for rect in data:
+        #     win32gui.FrameRect(hdc,rect,brush)
 
         win32gui.EndPaint(hWnd, paintStruct)
         return 0
@@ -233,9 +253,13 @@ def setup_screen():
 
     # http://msdn.microsoft.com/en-us/library/windows/desktop/ms633548(v=vs.85).aspx
     #win32gui.ShowWindow(hWindow, win32con.SW_SHOW)
+    t1 = threading.Thread(target=run_nn, args=(hWindow,))
+    t1.setDaemon(False)
+    t1.start()
+
     win32gui.PumpMessages()
 
-def _main(args):
+def _main():
     data = []
     g_hWnd = -1
 
@@ -249,22 +273,4 @@ def _main(args):
     # t2.join()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Run a YOLO_v2 style detection model. Choose')
-
-    parser.add_argument(
-        '-s',
-        '--score_threshold',
-        type=float,
-        help='threshold for bounding box scores, default .3',
-        default=.3)
-
-    parser.add_argument(
-        '-iou',
-        '--iou_threshold',
-        type=float,
-        help='threshold for non max suppression IOU, default .5',
-        default=.5)
-
-    args = parser.parse_args()
-    _main(args)
+    _main()
