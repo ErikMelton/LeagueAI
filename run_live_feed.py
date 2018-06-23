@@ -19,6 +19,7 @@ from YAD2K.yad2k.models.keras_yolo import yolo_eval, yolo_head
 from retrain_yolo import create_model
 
 loaded = False
+data = []
 
 parser = argparse.ArgumentParser(
     description='Run a YOLO_v2 style detection model. Choose')
@@ -28,7 +29,7 @@ parser.add_argument(
     '--score_threshold',
     type=float,
     help='threshold for bounding box scores, default .3',
-    default=.3)
+    default=.7)
 
 parser.add_argument(
     '-iou',
@@ -40,6 +41,8 @@ parser.add_argument(
 args = parser.parse_args()
 
 def test_yolo(image,is_fixed_size,model_image_size,sess,boxes,scores,classes,yolo_model,input_image_shape,class_names,colors):
+    global data
+    data = []
     if is_fixed_size:  # TODO: When resizing we can use minibatch input.
         resized_image = image.resize(tuple(reversed(model_image_size)), Image.BICUBIC)
         image_data = np.array(resized_image, dtype='float32')
@@ -64,9 +67,6 @@ def test_yolo(image,is_fixed_size,model_image_size,sess,boxes,scores,classes,yol
 
     print('Found {} boxes'.format(len(out_boxes)))
 
-    # Write data to a JSON file located within the 'output/' directory.
-    data = []
-
     for i, c in reversed(list(enumerate(out_classes))):
         predicted_class = class_names[c]
         box = out_boxes[i]
@@ -80,7 +80,8 @@ def test_yolo(image,is_fixed_size,model_image_size,sess,boxes,scores,classes,yol
         bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
         right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
         coords = (left,top,right,bottom)
-        data.append(coords)
+        minion = {'class': predicted_class, 'score': score, 'location': coords}
+        data.append(minion)
     
 def run_nn(hWnd):
     global loaded
@@ -150,7 +151,7 @@ def run_nn(hWnd):
             background.paste(img,mask=img.split()[3])
 
             test_yolo(background,is_fixed_size,model_image_size,sess,boxes,scores,classes,yolo_model,input_image_shape,class_names,colors)
-
+            win32gui.RedrawWindow(hWnd, None, None, win32con.RDW_INVALIDATE | win32con.RDW_ERASE)
             # img = test_yolo(background)
             # basewidth = 700
             # wpercent = (basewidth/float(img.size[0]))
@@ -159,7 +160,6 @@ def run_nn(hWnd):
             # img = np.array(img)
             # # Display the picture
             # cv2.imshow('OpenCV/Numpy normal', img)
-            print('fps: {0}'.format(1 / (time.time()-last_time)))
             # Press "q" to quit
             if cv2.waitKey(25) & 0xFF == ord(';'):
                 cv2.destroyAllWindows()
@@ -169,7 +169,8 @@ def run_nn(hWnd):
     return
 
 def wndProc(hWnd, message, wParam, lParam):
-    print('Updating')
+    global data
+
     if message == win32con.WM_PAINT:
         hdc, paintStruct = win32gui.BeginPaint(hWnd)
 
@@ -192,9 +193,20 @@ def wndProc(hWnd, message, wParam, lParam):
             win32gui.DrawText(hdc,'Loading Neural Net...',-1,rect,win32con.DT_CENTER | win32con.DT_NOCLIP | win32con.DT_SINGLELINE | win32con.DT_VCENTER)
         
         color = win32api.RGB(0,0,255)
+        color2 = win32api.RGB(255,255,0)
         brush = win32gui.CreateSolidBrush(color)
-        # for rect in data:
-        #     win32gui.FrameRect(hdc,rect,brush)
+        fontSize = 12
+        lf = win32gui.LOGFONT()
+        lf.lfFaceName= 'Times New Roman'
+        lf.lfHeight = int(round(dpiScale * fontSize))
+        lf.lfQuality = win32con.NONANTIALIASED_QUALITY
+        hf = win32gui.CreateFontIndirect(lf)
+        win32gui.SelectObject(hdc, hf)
+        win32gui.SetTextColor(hdc,color2)
+
+        for minion in data:
+            win32gui.DrawText(hdc,minion['class'] + ' ' + str(int(minion['score'] * 100)),-1,minion['location'],win32con.DT_BOTTOM | win32con.DT_SINGLELINE | win32con.DT_NOCLIP)
+            win32gui.FrameRect(hdc,minion['location'],brush)
 
         win32gui.EndPaint(hWnd, paintStruct)
         return 0
@@ -234,8 +246,8 @@ def setup_screen():
         style,
         0, # x
         0, # y
-        win32api.GetSystemMetrics(win32con.SM_CXSCREEN), # width
-        win32api.GetSystemMetrics(win32con.SM_CYSCREEN), # height
+        1920, # width
+        1080, # height
         None, # hWndParent
         None, # hMenu
         hInstance,
@@ -260,17 +272,7 @@ def setup_screen():
     win32gui.PumpMessages()
 
 def _main():
-    data = []
-    g_hWnd = -1
-
     setup_screen()
-    # t1 = threading.Thread(target=run_nn, args=(args.score_threshold,args.iou_threshold,g_hWnd,data,loaded))
-    # t2 = threading.Thread(target=setup_screen, args=(g_hWnd,data,loaded))
-    # t1.start()
-    # t2.start()
-
-    # t1.join()
-    # t2.join()
 
 if __name__ == '__main__':
     _main()
