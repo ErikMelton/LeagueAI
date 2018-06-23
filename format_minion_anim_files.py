@@ -13,14 +13,23 @@ class Minion():
         self.bboxheight = height
 
 def generateMinionDict():
-    minionDict = {'chaos_minion_melee_blue': [],'chaos_minion_melee_purple': [],'order_minion_melee_red': [],'order_minion_melee_blue': []}
+    minionDict = {
+        'minion_melee_ally': [],
+        'minion_melee_enemy': [],
+        'minion_ranged_ally': [],
+        'minion_ranged_enemy': [],
+        'minion_seige_ally': [],
+        'minion_seige_enemy': [],
+        'minion_super_ally': [],
+        'minion_super_enemy': []    
+    }
 
-    dataDir = './data/'
+    dataDir = './data/characters'
 
     for subdir,dirs,files in os.walk(dataDir):
         for file in files:
             if 'minion' in subdir:
-                minionType = subdir[7:]
+                minionType = subdir[18:]
                 minionType = minionType.split('\\', 1)[0]
                 minionImage = Image.open(os.path.join(subdir,file))
                 minion = Minion(minionType,minionImage)
@@ -40,7 +49,7 @@ def generateScreenshotList():
     return screenshots   
 
 def preprocess_minion_files():
-    for subdir,dirs,files in os.walk('./data/'):
+    for subdir,dirs,files in os.walk('./data/characters'):
         for file in files:
             if 'minion' in subdir:
                 minionImage = Image.open(os.path.join(subdir,file))
@@ -55,19 +64,6 @@ def preprocess_minion_files():
                 image_data_new = image_data[cropBox[0]:cropBox[1] + 1, cropBox[2]:cropBox[3] + 1, :]
                 reduced_minion_image = Image.fromarray(image_data_new)
                 reduced_minion_image.save(os.path.join(subdir,file))
-
-def preprocess_minion_files1():
-    for subdir,dirs,files in os.walk('./data/'):
-        for file in files:
-            if 'minion' in subdir:
-                minionImage = Image.open(os.path.join(subdir,file))
-                
-                image = minionImage.convert('RGBA')
-                new_image = Image.new('RGBA', (330, 330), (0, 0, 0, 0))
-                upper = (330 - image.size[1]) / 2
-                mid = (330 - image.size[0]) / 2
-                new_image.paste(image, (int(mid), int(upper)))
-                new_image.save(os.path.join(subdir,file))
 
 if __name__ == '__main__':
     preprocess_minion_files()

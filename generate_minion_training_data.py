@@ -12,11 +12,20 @@ trainDict = []
 
 count = 0
 
-label_dict = {'chaos_minion_melee_blue': 0,'chaos_minion_melee_purple': 1,'order_minion_melee_red': 2,'order_minion_melee_blue': 3}
+label_dict = {
+    'minion_melee_ally': 0,
+    'minion_melee_enemy': 1,
+    'minion_ranged_ally': 2,
+    'minion_ranged_enemy': 3,
+    'minion_seige_ally': 4,
+    'minion_seige_enemy': 5,
+    'minion_super_ally': 6,
+    'minion_super_enemy': 7    
+}
 
 for screenshot in screenshotList:
     print('Generating training data for image: ' + str(count) + ' of ' + str(len(screenshotList)))
-    numMinions = random.randint(4,16)
+    numMinions = random.randint(4,18)
     minionData = []
     # draw = ImageDraw.Draw(screenshot)
 
