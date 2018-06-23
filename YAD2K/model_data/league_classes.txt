@@ -1,4 +1,8 @@
-chaos_minion_melee_blue
-chaos_minion_melee_purple
-order_minion_melee_red
-order_minion_melee_blue
+minion_melee_ally
+minion_melee_enemy
+minion_ranged_ally
+minion_ranged_enemy
+minion_seige_ally
+minion_seige_enemy
+minion_super_ally
+minion_super_enemy
