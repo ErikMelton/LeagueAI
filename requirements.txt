@@ -28,7 +28,7 @@ mccabe==0.6.1
 moviepy==0.2.3.5
 numpy==1.14.3
 Pillow==5.1.0
-protobuf==3.5.2.post1
+protobuf==3.18.3
 pydot-ng==1.0.0
 pyglet==1.3.2
 pylint==1.9.1
